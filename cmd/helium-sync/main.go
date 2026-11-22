@@ -159,14 +159,15 @@ func openStore(dir string) (*store.Store, error) {
 func serve(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
 	data := dataFlag(fs)
-	addr := fs.String("addr", env("HELIUM_SYNC_ADDR", ""), "listen address (default :8080, or :443 with --acme-domain) (env HELIUM_SYNC_ADDR)")
+	addr := fs.String("addr", env("HELIUM_SYNC_ADDR", ""), "listen address (default 127.0.0.1:8080; :443 with --acme-domain, :8443 with --tls-cert) (env HELIUM_SYNC_ADDR)")
 	publicURL := fs.String("public-url", env("HELIUM_SYNC_PUBLIC_URL", ""), "external base URL, e.g. https://sync.example.com (env HELIUM_SYNC_PUBLIC_URL)")
 	reg := fs.String("registration", env("HELIUM_SYNC_REGISTRATION", "invite"), "account creation: invite, open or closed (env HELIUM_SYNC_REGISTRATION)")
 	tlsCert := fs.String("tls-cert", env("HELIUM_SYNC_TLS_CERT", ""), "TLS certificate file (env HELIUM_SYNC_TLS_CERT)")
 	tlsKey := fs.String("tls-key", env("HELIUM_SYNC_TLS_KEY", ""), "TLS key file (env HELIUM_SYNC_TLS_KEY)")
 	acmeDomain := fs.String("acme-domain", env("HELIUM_SYNC_ACME_DOMAIN", ""), "obtain a Let's Encrypt certificate for this domain; needs ports 80 and 443 (env HELIUM_SYNC_ACME_DOMAIN)")
 	acmeEmail := fs.String("acme-email", env("HELIUM_SYNC_ACME_EMAIL", ""), "contact email for Let's Encrypt (env HELIUM_SYNC_ACME_EMAIL)")
-	trustProxy := fs.Bool("trust-proxy", envBool("HELIUM_SYNC_TRUST_PROXY"), "trust X-Forwarded-* headers from a reverse proxy (env HELIUM_SYNC_TRUST_PROXY)")
+	trustProxy := fs.Bool("trust-proxy", envBool("HELIUM_SYNC_TRUST_PROXY"), "behind a reverse proxy that terminates HTTPS: trust its X-Forwarded-* headers (env HELIUM_SYNC_TRUST_PROXY)")
+	insecureHTTP := fs.Bool("insecure-http", envBool("HELIUM_SYNC_INSECURE_HTTP"), "allow plain HTTP beyond localhost; only for a trusted private network such as a LAN or Tailscale (env HELIUM_SYNC_INSECURE_HTTP)")
 	quotaMB := fs.Int("quota-mb", envInt("HELIUM_SYNC_QUOTA_MB", 1024), "storage quota per account in MiB, 0 = unlimited (env HELIUM_SYNC_QUOTA_MB)")
 	historyDays := fs.Int("history-days", envInt("HELIUM_SYNC_HISTORY_DAYS", 90), "keep synced history for this many days, 0 = forever (env HELIUM_SYNC_HISTORY_DAYS)")
 	tombstoneDays := fs.Int("tombstone-days", envInt("HELIUM_SYNC_TOMBSTONE_DAYS", 180), "remember deletions this long; devices offline longer resync from scratch (env HELIUM_SYNC_TOMBSTONE_DAYS)")
@@ -205,6 +206,20 @@ func serve(ctx context.Context, args []string) error {
 	if *acmeDomain != "" && *publicURL == "" {
 		*publicURL = "https://" + *acmeDomain
 	}
+	tlsOn := *tlsCert != "" || *acmeDomain != ""
+	if *addr == "" {
+		switch {
+		case *acmeDomain != "":
+			*addr = ":443"
+		case tlsOn:
+			*addr = ":8443"
+		default:
+			*addr = "127.0.0.1:8080" // nothing is exposed unless asked for
+		}
+	}
+	if err := checkExposure(*addr, *publicURL, tlsOn, *trustProxy, *insecureHTTP); err != nil {
+		return err
+	}
 	srv, err := server.New(server.Config{
 		PublicURL:        *publicURL,
 		DataDir:          *data,
@@ -229,14 +244,6 @@ func serve(ctx context.Context, args []string) error {
 		IdleTimeout:       120 * time.Second,
 		MaxHeaderBytes:    64 << 10,
 	}
-	tlsOn := *tlsCert != "" || *acmeDomain != ""
-	if *addr == "" {
-		*addr = ":8080"
-		if *acmeDomain != "" {
-			*addr = ":443"
-		}
-	}
-
 	var ln net.Listener
 	switch {
 	case *acmeDomain != "":
@@ -282,8 +289,11 @@ func serve(ctx context.Context, args []string) error {
 		base = scheme + "://" + host
 	}
 	log.Info("helium-sync listening", "addr", ln.Addr().String(), "url", base, "version", server.Version, "extension", srv.ExtensionID())
-	if !tlsOn && !*trustProxy && !isLoopback(*addr) {
-		log.Warn("serving plain HTTP: put the server behind HTTPS (e.g. Caddy or Tailscale) or use --acme-domain / --tls-cert. Data is end-to-end encrypted, but sign-in tokens are not.")
+	switch {
+	case !isLoopback(*addr) && *insecureHTTP && !tlsOn:
+		log.Warn("serving plain HTTP beyond localhost (--insecure-http): only do this on a network you trust, such as a LAN or Tailscale. Data stays end-to-end encrypted, but sign-in tokens could be intercepted.")
+	case !isLoopback(*addr) && *trustProxy:
+		log.Warn("--trust-proxy: make sure only your reverse proxy can reach " + *addr + ", or clients could spoof their address and dodge rate limits")
 	}
 	if err := bootstrap(ctx, st, *reg, base, logOut); err != nil {
 		return err
@@ -315,6 +325,32 @@ func openLogFile(path string) (*os.File, error) {
 	return os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 }
 
+// checkExposure refuses configurations that would expose sign-in tokens or
+// let clients choose the server's public address.
+func checkExposure(addr, publicURL string, tlsOn, trustProxy, insecureHTTP bool) error {
+	if publicURL != "" {
+		if err := server.ValidPublicURL(publicURL); err != nil {
+			return err
+		}
+	}
+	if isLoopback(addr) {
+		return nil
+	}
+	if !tlsOn && !trustProxy && !insecureHTTP {
+		return fmt.Errorf(`refusing to serve plain HTTP on %s.
+Choose one:
+  --acme-domain sync.example.com    automatic HTTPS (Let's Encrypt, ports 80 and 443)
+  --tls-cert FILE --tls-key FILE    your own certificate
+  --trust-proxy                     behind a reverse proxy that does HTTPS (Caddy, nginx); bind to 127.0.0.1
+  --insecure-http                   plain HTTP on a private network you trust (LAN, Tailscale)
+or keep the default 127.0.0.1:8080 for local use`, addr)
+	}
+	if publicURL == "" {
+		return errors.New("--public-url is required when listening beyond localhost (e.g. --public-url https://sync.example.com); it is the address devices use and is never taken from requests")
+	}
+	return nil
+}
+
 func isLoopback(addr string) bool {
 	host, _, err := net.SplitHostPort(addr)
 	if err != nil {
@@ -338,19 +374,18 @@ func bootstrap(ctx context.Context, st *store.Store, reg, base string, out io.Wr
 	if err := st.CreateInvite(ctx, code, 1, 7*24*time.Hour, "bootstrap"); err != nil {
 		return err
 	}
+	sh, ps1 := server.TweakCommands(base)
 	fmt.Fprintf(out, `
-  ┌────────────────────────────────────────────────────────────────┐
-  │  Helium Sync is ready. No accounts yet.                        │
-  │                                                                │
-  │  Invite code for the first account:  %-26s│
-  │                                                                │
-  │  Set up Helium (close it first):                               │
-  │    macOS/Linux:  curl -fsSL %s/tweak.sh | sh
-  │    Windows:      irm %s/tweak.ps1 | iex
-  │  or open %s in a browser.
-  └────────────────────────────────────────────────────────────────┘
+  Helium Sync is ready. No accounts yet.
 
-`, code, base, base, base)
+  Invite code for the first account:  %s
+
+  Connect Helium (quit it first), on each computer:
+    macOS / Linux:  %s
+    Windows:        %s
+  or open %s in a browser.
+
+`, code, sh, ps1, base)
 	return nil
 }
 

@@ -1,27 +1,34 @@
-# Helium Sync tweak for Windows.
+# Helium Sync tweak for Windows: prepares Helium to install the Helium Sync
+# extension from your own server. In PowerShell:
 #
-# Installs the Helium Sync extension into Helium, configured for your server.
-# In PowerShell:
-#   irm https://your-server/tweak.ps1 | iex
+#   $env:HELIUM_SYNC_SERVER='https://sync.example.com'; irm https://raw.githubusercontent.com/j4ckxyz/helium-sync-server/main/scripts/tweak.ps1 | iex
 #
-# What it does:
-#   1. Turns on Helium's "Handling of extension MIME type requests: Always
-#      prompt for install" flag (chrome://flags/#extension-mime-request-handling)
-#      in Helium's Local State, so Helium can install extensions from your
-#      server. A backup of Local State is kept next to it.
+# What it does (nothing else):
+#   1. Turns on Helium's own flag "Handling of extension MIME type requests:
+#      Always prompt for install" (chrome://flags/#extension-mime-request-handling)
+#      by editing Helium's Local State while Helium is closed. A backup of
+#      Local State is kept next to it; HELIUM_SYNC_UNDO=1 restores it.
 #   2. Opens your server's install page in Helium. Click "Add extension".
-#   Updates then come from your server automatically.
+#      The extension then updates itself from your server.
 #
-# Environment overrides: HELIUM_SYNC_SERVER, HELIUM_SYNC_DATA_DIR,
-# HELIUM_SYNC_UNDO=1 (restore the Local State backup).
+# Environment: HELIUM_SYNC_SERVER (asked for if missing), HELIUM_SYNC_DATA_DIR,
+# HELIUM_SYNC_ALLOW_HTTP=1 (plain HTTP to a public address, not recommended),
+# HELIUM_SYNC_UNDO=1.
 
 $ErrorActionPreference = 'Stop'
 
-$Server = if ($env:HELIUM_SYNC_SERVER) { $env:HELIUM_SYNC_SERVER } else { '__HELIUM_SYNC_SERVER__' }
-if ($Server -like '__HELIUM_SYNC_*' -or -not $Server) {
-  throw 'No server address. Set $env:HELIUM_SYNC_SERVER = "https://your-server" and run again.'
+if ($env:HELIUM_SYNC_UNDO -ne '1') {
+  $Server = $env:HELIUM_SYNC_SERVER
+  if (-not $Server) { $Server = Read-Host 'Your Helium Sync server address (e.g. https://sync.example.com)' }
+  $Server = $Server.Trim().TrimEnd('/')
+  if ($Server -notmatch '^https?://') { $Server = "https://$Server" }
+  # Only plain addresses: the value is used in URLs and process arguments.
+  if ($Server -notmatch '^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$') { throw "Not a valid server address: $Server" }
+  $private = $Server -match '^http://(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[01])\.|100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.|[^/]+\.local(:|/|$)|[^/]+\.ts\.net(:|/|$))'
+  if ($Server.StartsWith('http://') -and -not $private -and $env:HELIUM_SYNC_ALLOW_HTTP -ne '1') {
+    throw "Refusing plain HTTP to a public address ($Server): your sign-in could be intercepted. Use https://."
+  }
 }
-$Server = $Server.TrimEnd('/')
 
 $DataDir = if ($env:HELIUM_SYNC_DATA_DIR) { $env:HELIUM_SYNC_DATA_DIR } else { Join-Path $env:LOCALAPPDATA 'imput\Helium\User Data' }
 $LocalState = Join-Path $DataDir 'Local State'

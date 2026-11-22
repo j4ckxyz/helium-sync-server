@@ -46,14 +46,14 @@
     <ol>
       <li><b>Quit Helium</b>, then run the tweak for your system:
         <div class="os">macOS / Linux — Terminal</div>
-        <div class="cmd"><code id="c1">curl -fsSL {{.URL}}/tweak.sh | sh</code><button data-copy="c1">Copy</button></div>
+        <div class="cmd"><code id="c1">{{.TweakSh}}</code><button data-copy="c1">Copy</button></div>
         <div class="os">Windows — PowerShell</div>
-        <div class="cmd"><code id="c2">irm {{.URL}}/tweak.ps1 | iex</code><button data-copy="c2">Copy</button></div>
+        <div class="cmd"><code id="c2">{{.TweakPs1}}</code><button data-copy="c2">Copy</button></div>
       </li>
       <li>Helium opens. Click <b>Add extension</b>.</li>
       <li>Sign in, or create your account{{if eq .Registration "invite"}} with an invite code (the server prints one at first start; make more with <code>helium-sync invite</code>){{end}}.</li>
     </ol>
-    <p class="muted" style="margin-top:14px;font-size:13px">The tweak only switches on Helium's built-in “Always prompt for install” flag so Helium accepts the extension from this server, then opens the install page. Undo with <code>sh tweak.sh --undo</code>. Prefer Developer mode? <a href="/ext/helium-sync.zip">Download the extension</a> and use “Load unpacked”.</p>
+    <p class="muted" style="margin-top:14px;font-size:13px">The tweak only switches on Helium's built-in “Always prompt for install” flag so Helium accepts the extension from this server, then opens the install page. The scripts live in the <a href="https://github.com/j4ckxyz/helium-sync-server/tree/main/scripts">project repository</a>; read them before running. Undo with <code>--undo</code>. Prefer Developer mode? <a href="/ext/helium-sync.zip">Download the extension</a> and use “Load unpacked”.</p>
   </div>
 
   <div class="card">

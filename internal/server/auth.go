@@ -246,7 +246,14 @@ func (s *Server) handleRegister(w http.ResponseWriter, r *http.Request) {
 	s.newSession(w, r, u, req.DeviceName, false)
 }
 
+// maxDevicesPerUser bounds device records per account.
+const maxDevicesPerUser = 64
+
 func (s *Server) newSession(w http.ResponseWriter, r *http.Request, u *store.User, deviceName string, includeKey bool) {
+	if devs, err := s.store.ListDevices(r.Context(), u.ID); err == nil && len(devs) >= maxDevicesPerUser {
+		writeErr(w, http.StatusConflict, "too_many_devices", "this account has too many devices; sign some out first")
+		return
+	}
 	tok := newToken()
 	d := &store.Device{ID: newDeviceID(), UserID: u.ID, Name: cleanDeviceName(deviceName)}
 	if err := s.store.CreateDevice(r.Context(), d, tok); err != nil {

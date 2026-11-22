@@ -46,8 +46,7 @@ func newEnv(t testing.TB, mutate ...func(*Config)) *env {
 			"embed.go":      {Data: []byte(`package x`)},
 		},
 		WebFS: fstest.MapFS{
-			"index.html": {Data: []byte(`<p>{{.URL}} {{.ExtensionID}}</p>`)},
-			"tweak.sh":   {Data: []byte(`SERVER="__HELIUM_SYNC_SERVER__" ID=__HELIUM_SYNC_EXTENSION_ID__`)},
+			"index.html": {Data: []byte(`<p>{{.URL}} {{.ExtensionID}} {{.TweakSh}}</p>`)},
 		},
 	}
 	for _, m := range mutate {
@@ -469,10 +468,10 @@ func TestExtensionPackaging(t *testing.T) {
 		!bytes.Contains(xml, []byte("https://sync.example.com/ext/helium-sync.crx")) {
 		t.Fatalf("%s", xml)
 	}
-	res, _ = http.Get(e.ts.URL + "/tweak.sh")
-	sh, _ := io.ReadAll(res.Body)
-	if string(sh) != `SERVER="https://sync.example.com" ID=`+id {
-		t.Fatalf("%s", sh)
+	res, _ = http.Get(e.ts.URL + "/")
+	page, _ := io.ReadAll(res.Body)
+	if !bytes.Contains(page, []byte("raw.githubusercontent.com/j4ckxyz/helium-sync-server/main/scripts/tweak.sh | sh -s -- --server https://sync.example.com")) {
+		t.Fatalf("landing page lacks the tweak command: %s", page)
 	}
 	// CORS for the extension only.
 	req, _ := http.NewRequest("OPTIONS", e.ts.URL+"/api/v1/login", nil)
@@ -505,4 +504,31 @@ func BenchmarkFanout(b *testing.B) {
 		c2.next("changes")
 	}
 	b.ReportMetric(float64(b.Elapsed().Microseconds())/float64(b.N), "µs/roundtrip")
+}
+
+func TestPublicURLValidation(t *testing.T) {
+	for _, ok := range []string{"https://sync.example.com", "http://100.64.1.2:8080", "https://example.com/sync/"} {
+		if err := ValidPublicURL(ok); err != nil {
+			t.Errorf("%s: %v", ok, err)
+		}
+	}
+	for _, bad := range []string{"sync.example.com", "https://a.com/$(id)", "https://a.com\"; echo", "javascript:alert(1)", "https://a b.com"} {
+		if ValidPublicURL(bad) == nil {
+			t.Errorf("%q accepted", bad)
+		}
+	}
+}
+
+func TestHostHeaderIsValidated(t *testing.T) {
+	e := newEnv(t)
+	req, _ := http.NewRequest("GET", e.ts.URL+"/", nil)
+	req.Host = "evil.com\"$(id)"
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(res.Body)
+	if bytes.Contains(body, []byte("$(id)")) {
+		t.Fatal("unvalidated Host header reached the page")
+	}
 }

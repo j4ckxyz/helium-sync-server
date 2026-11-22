@@ -13,6 +13,7 @@ import (
 	"net"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -78,6 +79,11 @@ func New(cfg Config, st *store.Store) (*Server, error) {
 		cfg.MaxRecordBytes = 512 << 10
 	}
 	cfg.PublicURL = strings.TrimRight(cfg.PublicURL, "/")
+	if cfg.PublicURL != "" {
+		if err := ValidPublicURL(cfg.PublicURL); err != nil {
+			return nil, err
+		}
+	}
 
 	key, err := crx.LoadOrCreateKey(filepath.Join(cfg.DataDir, "extension-key.pem"))
 	if err != nil {
@@ -163,8 +169,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /ext/updates.xml", s.handleUpdates)
 	mux.HandleFunc("GET /ext/helium-sync.crx", s.handleCRX)
 	mux.HandleFunc("GET /ext/helium-sync.zip", s.handleZip)
-	mux.HandleFunc("GET /tweak.sh", s.handleScript("tweak.sh", "text/x-shellscript; charset=utf-8"))
-	mux.HandleFunc("GET /tweak.ps1", s.handleScript("tweak.ps1", "text/plain; charset=utf-8"))
 	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("ok\n")) })
 	mux.HandleFunc("GET /install", s.handleInstall)
 	mux.HandleFunc("GET /{$}", s.handleIndex)
@@ -179,6 +183,9 @@ func (s *Server) middleware(next http.Handler) http.Handler {
 		h.Set("Referrer-Policy", "no-referrer")
 		h.Set("X-Frame-Options", "DENY")
 		h.Set("Cross-Origin-Resource-Policy", "cross-origin")
+		if r.TLS != nil || (s.cfg.TrustProxy && r.Header.Get("X-Forwarded-Proto") == "https") {
+			h.Set("Strict-Transport-Security", "max-age=31536000")
+		}
 		if strings.HasPrefix(r.URL.Path, "/api/") {
 			h.Set("Cache-Control", "no-store")
 			// Bearer tokens are not ambient credentials, so allowing the
@@ -216,10 +223,31 @@ func (s *Server) clientIP(r *http.Request) string {
 	return host
 }
 
+// Repository hosts the install scripts referenced by the server's pages.
+const Repository = "https://github.com/j4ckxyz/helium-sync-server"
+
+var publicURLRE = regexp.MustCompile(`^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$`)
+
+// ValidPublicURL accepts plain http(s) base URLs only: the value ends up in
+// install commands and extension packages.
+func ValidPublicURL(u string) error {
+	if !publicURLRE.MatchString(strings.TrimRight(u, "/")) {
+		return fmt.Errorf("invalid public URL %q: use the form https://sync.example.com", u)
+	}
+	return nil
+}
+
+var hostRE = regexp.MustCompile(`^[A-Za-z0-9.-]+(:[0-9]{1,5})?$|^\[[0-9a-fA-F:]+\](:[0-9]{1,5})?$`)
+
 // publicURL returns the base URL clients should use to reach this server.
+// Without --public-url (local use only) it comes from the request, so the
+// Host header is validated first.
 func (s *Server) publicURL(r *http.Request) string {
 	if s.cfg.PublicURL != "" {
 		return s.cfg.PublicURL
+	}
+	if !hostRE.MatchString(r.Host) {
+		return "http://localhost"
 	}
 	scheme := "http"
 	if r.TLS != nil {

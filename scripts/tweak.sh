@@ -1,34 +1,48 @@
 #!/bin/sh
-# Helium Sync tweak for macOS and Linux.
+# Helium Sync tweak for macOS and Linux: prepares Helium to install the
+# Helium Sync extension from your own server.
 #
-# Installs the Helium Sync extension into Helium, configured for your server:
-#   curl -fsSL https://your-server/tweak.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/j4ckxyz/helium-sync-server/main/scripts/tweak.sh | sh -s -- --server https://sync.example.com
 #
-# What it does:
-#   1. Turns on Helium's "Handling of extension MIME type requests: Always
-#      prompt for install" flag (chrome://flags/#extension-mime-request-handling)
-#      in Helium's Local State, so Helium can install extensions from your
-#      server. A backup of Local State is kept next to it.
+# What it does (nothing else):
+#   1. Turns on Helium's own flag "Handling of extension MIME type requests:
+#      Always prompt for install" (chrome://flags/#extension-mime-request-handling)
+#      by editing Helium's Local State while Helium is closed. A backup of
+#      Local State is kept next to it; --undo restores it.
 #   2. Opens your server's install page in Helium. Click "Add extension".
-#   Updates then come from your server automatically.
+#      The extension then updates itself from your server.
 #
 # Options:
-#   --server URL     server address (defaults to the server this came from)
-#   --unpacked       install as an unpacked extension instead (Developer mode)
+#   --server URL     your Helium Sync server (asked for if missing)
+#   --unpacked       download the extension for Developer mode instead
 #   --data-dir DIR   Helium's user data directory, if not the default
 #   --no-launch      only change the flag, do not open Helium
+#   --allow-http     allow a plain-HTTP server on a public address (not recommended)
 #   --undo           restore Local State from the backup this script made
 set -eu
 
-SERVER="${HELIUM_SYNC_SERVER:-__HELIUM_SYNC_SERVER__}"
+SERVER="${HELIUM_SYNC_SERVER:-}"
 MODE=crx
 LAUNCH=1
 DATA_DIR=""
 UNDO=0
+ALLOW_HTTP=0
 
 say() { printf '%s\n' "$*"; }
 bold() { printf '\033[1m%s\033[0m\n' "$*"; }
 die() { printf '\033[31merror:\033[0m %s\n' "$*" >&2; exit 1; }
+
+ask() {
+  # Read from the terminal even when piped from curl. Probe in a subshell
+  # first: a failed exec redirection would end a POSIX shell silently.
+  if (exec 3<>/dev/tty) 2>/dev/null && exec 3<>/dev/tty; then
+    printf '%s' "$1" >&3
+    read -r REPLY <&3 || REPLY=""
+    exec 3>&-
+    return 0
+  fi
+  return 1
+}
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -38,16 +52,30 @@ while [ $# -gt 0 ]; do
     --data-dir) DATA_DIR="${2:-}"; shift 2 ;;
     --data-dir=*) DATA_DIR="${1#*=}"; shift ;;
     --no-launch) LAUNCH=0; shift ;;
+    --allow-http) ALLOW_HTTP=1; shift ;;
     --undo) UNDO=1; shift ;;
-    -h|--help) sed -n '2,24p' "$0" 2>/dev/null || true; exit 0 ;;
+    -h|--help) sed -n '2,25p' "$0" 2>/dev/null || true; exit 0 ;;
     *) die "unknown option: $1" ;;
   esac
 done
 
-case "$SERVER" in
-  __HELIUM_SYNC_*|"") die "no server address. Run: sh tweak.sh --server https://your-server" ;;
-esac
-SERVER="${SERVER%/}"
+if [ "$UNDO" = 0 ]; then
+  if [ -z "$SERVER" ]; then
+    ask "Your Helium Sync server address (e.g. https://sync.example.com): " || die "no server address: pass --server https://your-server"
+    SERVER="$REPLY"
+  fi
+  SERVER="${SERVER%/}"
+  case "$SERVER" in
+    http://*|https://*) ;;
+    *) SERVER="https://$SERVER" ;;
+  esac
+  # Only plain addresses: the value is used in commands and URLs below.
+  printf '%s' "$SERVER" | grep -Eq '^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$' || die "not a valid server address: $SERVER"
+  case "$SERVER" in
+    http://localhost*|http://127.*|http://10.*|http://192.168.*|http://172.1[6-9].*|http://172.2[0-9].*|http://172.3[01].*|http://100.6[4-9].*|http://100.[7-9][0-9].*|http://100.1[01][0-9].*|http://100.12[0-7].*|http://*.local|http://*.local:*|http://*.ts.net|http://*.ts.net:*) ;;
+    http://*) [ "$ALLOW_HTTP" = 1 ] || die "refusing plain HTTP to a public address ($SERVER): your sign-in could be intercepted. Use https:// (or --allow-http if you really mean it)." ;;
+  esac
+fi
 
 OS="$(uname -s)"
 case "$OS" in
@@ -95,17 +123,6 @@ helium_running() {
   else
     pgrep -x helium >/dev/null 2>&1
   fi
-}
-
-ask() {
-  # Read from the terminal even when piped from curl.
-  if { exec 3<>/dev/tty; } 2>/dev/null; then
-    printf '%s' "$1" >&3
-    read -r REPLY <&3 || REPLY=""
-    exec 3>&-
-    return 0
-  fi
-  return 1
 }
 
 wait_for_helium_to_quit() {

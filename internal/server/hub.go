@@ -40,6 +40,9 @@ import (
 // are ignored on both sides.
 const protocolVersion = 1
 
+// maxConnsPerUser bounds what one account (or a stolen token) can hold open.
+const maxConnsPerUser = 32
+
 const (
 	closeAuth       websocket.StatusCode = 4001 // re-login required
 	closeSlow       websocket.StatusCode = 4008 // reconnect and resume
@@ -282,7 +285,7 @@ func (s *Server) handlePush(w http.ResponseWriter, r *http.Request) {
 	var req struct {
 		Writes []store.Write `json:"writes"`
 	}
-	if !readJSON(w, r, 64<<20, &req) {
+	if !readJSON(w, r, 16<<20, &req) {
 		return
 	}
 	res, perr := s.push(r.Context(), d, req.Writes, nil, 0)
@@ -347,7 +350,7 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
-	c.SetReadLimit(64 << 20)
+	c.SetReadLimit(16 << 20)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -378,6 +381,11 @@ func (s *Server) handleWS(w http.ResponseWriter, r *http.Request) {
 
 	uh := s.hub.get(dev.UserID)
 	uh.mu.Lock()
+	if len(uh.conns) >= maxConnsPerUser {
+		uh.mu.Unlock()
+		c.Close(websocket.StatusTryAgainLater, "too many connections for this account")
+		return
+	}
 	seq, gc, _ := s.store.UserSeq(ctx, dev.UserID)
 	uh.conns[conn] = struct{}{}
 	ready, _ := json.Marshal(map[string]any{"t": "ready", "proto": protocolVersion, "version": Version, "device": dev.ID, "seq": seq, "gc": gc, "online": uh.onlineLocked()})

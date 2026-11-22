@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # create the release and upload binaries
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Test
+        run: |
+          go vet ./...
+          go test ./...
+      - name: Build
+        run: make dist VERSION=${GITHUB_REF_NAME}
+      - name: Checksums
+        run: cd dist && sha256sum helium-sync-* > checksums.txt && cat checksums.txt
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Server binaries for Linux, macOS, Windows and FreeBSD. Install with the one-liners in the README; they verify these files against checksums.txt."

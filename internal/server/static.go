@@ -76,39 +76,25 @@ type pageData struct {
 	Version      string
 	ExtVersion   string
 	Registration string
+	TweakSh      string
+	TweakPs1     string
+}
+
+// TweakCommands are the one-liners that prepare Helium for this server.
+func TweakCommands(base string) (sh, ps1 string) {
+	raw := strings.Replace(Repository, "github.com", "raw.githubusercontent.com", 1) + "/main/scripts"
+	sh = "curl -fsSL " + raw + "/tweak.sh | sh -s -- --server " + base
+	ps1 = "$env:HELIUM_SYNC_SERVER='" + base + "'; irm " + raw + "/tweak.ps1 | iex"
+	return sh, ps1
 }
 
 func (s *Server) data(r *http.Request) pageData {
 	d := pageData{URL: s.publicURL(r), ExtensionID: s.ExtensionID(), Version: Version, Registration: s.cfg.Registration}
+	d.TweakSh, d.TweakPs1 = TweakCommands(d.URL)
 	if p, err := s.pkg(r); err == nil {
 		d.ExtVersion = p.Version
 	}
 	return d
-}
-
-// handleScript renders a tweak script with this server's address baked in.
-// The scripts use a plain-text placeholder rather than templating so they stay
-// runnable from a checkout.
-func (s *Server) handleScript(name, contentType string) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if s.cfg.WebFS == nil {
-			http.NotFound(w, r)
-			return
-		}
-		b, err := fs.ReadFile(s.cfg.WebFS, name)
-		if err != nil {
-			http.NotFound(w, r)
-			return
-		}
-		d := s.data(r)
-		out := strings.NewReplacer(
-			"__HELIUM_SYNC_SERVER__", d.URL,
-			"__HELIUM_SYNC_EXTENSION_ID__", d.ExtensionID,
-		).Replace(string(b))
-		w.Header().Set("Content-Type", contentType)
-		w.Header().Set("Cache-Control", "no-cache")
-		w.Write([]byte(out))
-	}
 }
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
