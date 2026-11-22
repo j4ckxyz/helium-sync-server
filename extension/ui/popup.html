@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Helium Sync</title>
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="../icons/icon-32.png" width="22" height="22" alt="">
+    <strong class="grow">Helium Sync</strong>
+    <span id="state"></span>
+  </header>
+
+  <div id="signed-out" class="pad hidden">
+    <p>Sync bookmarks, history and live tabs between your Helium browsers, through your own server.</p>
+    <button class="primary" id="setup" style="margin-top:12px;width:100%">Set up sync</button>
+  </div>
+
+  <div id="main" class="hidden">
+    <div id="alert" class="notice hidden" style="margin:12px 14px 0"></div>
+
+    <section class="pad live" id="live">
+      <div class="row">
+        <div class="grow">
+          <div class="label">Live tabs</div>
+          <div class="muted small" id="live-desc"></div>
+        </div>
+        <button class="small" id="live-here">Sync this window</button>
+      </div>
+    </section>
+
+    <section id="send" class="pad hidden">
+      <div class="label">Send this tab to</div>
+      <div class="chips" id="send-targets"></div>
+    </section>
+
+    <section id="ext" class="pad hidden">
+      <div class="label">Extensions from your other devices</div>
+      <div id="ext-list" class="mini-list"></div>
+    </section>
+
+    <section id="devices" class="hidden">
+      <div class="pad-x label" style="padding-top:12px">Tabs on your other devices</div>
+      <div id="device-list"></div>
+    </section>
+  </div>
+
+  <footer>
+    <a href="#" id="open-history">Synced history</a>
+    <span class="grow"></span>
+    <button class="link" id="sync-now">Sync now</button>
+    <a href="#" id="open-settings">Settings</a>
+  </footer>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Helium Sync</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --text:#18181b; --muted:#6b6b76; --border:#e4e4e8; --accent:#a21caf; --code:#f1f1f3; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111113; --card:#1a1a1d; --text:#ececef; --muted:#9d9da8; --border:#2e2e33; --accent:#e879f9; --code:#232327; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 720px; margin: 0 auto; padding: 48px 20px 64px; }
+  header { display:flex; align-items:center; gap:14px; margin-bottom: 28px; }
+  .logo { width:44px; height:44px; border-radius:11px; background:linear-gradient(135deg,#d946ef,#7c3aed); display:grid; place-items:center; flex:none; }
+  h1 { font-size: 26px; margin:0; letter-spacing:-0.02em; }
+  h2 { font-size: 16px; margin: 0 0 10px; }
+  .muted { color: var(--muted); }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; margin-top:16px; }
+  ol { margin: 8px 0 0; padding-left: 22px; }
+  li + li { margin-top: 10px; }
+  .cmd { display:flex; align-items:stretch; gap:8px; margin-top:8px; }
+  code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .cmd code { flex:1; background:var(--code); border-radius:8px; padding:9px 12px; overflow-x:auto; white-space:nowrap; }
+  button { font:inherit; font-size:13px; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:8px; padding:0 12px; cursor:pointer; }
+  button:hover { border-color: var(--accent); }
+  .os { font-weight:600; font-size:13px; margin-top: 14px; }
+  a { color: var(--accent); }
+  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  .feat { font-size: 14px; }
+  .feat b { display:block; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo"><svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg></div>
+    <div>
+      <h1>Helium Sync</h1>
+      <div class="muted">Your self-hosted, end-to-end encrypted sync server · <code>{{.URL}}</code></div>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>Connect a Helium browser</h2>
+    <ol>
+      <li><b>Quit Helium</b>, then run the tweak for your system:
+        <div class="os">macOS / Linux — Terminal</div>
+        <div class="cmd"><code id="c1">curl -fsSL {{.URL}}/tweak.sh | sh</code><button data-copy="c1">Copy</button></div>
+        <div class="os">Windows — PowerShell</div>
+        <div class="cmd"><code id="c2">irm {{.URL}}/tweak.ps1 | iex</code><button data-copy="c2">Copy</button></div>
+      </li>
+      <li>Helium opens. Click <b>Add extension</b>.</li>
+      <li>Sign in, or create your account{{if eq .Registration "invite"}} with an invite code (the server prints one at first start; make more with <code>helium-sync invite</code>){{end}}.</li>
+    </ol>
+    <p class="muted" style="margin-top:14px;font-size:13px">The tweak only switches on Helium's built-in “Always prompt for install” flag so Helium accepts the extension from this server, then opens the install page. Undo with <code>sh tweak.sh --undo</code>. Prefer Developer mode? <a href="/ext/helium-sync.zip">Download the extension</a> and use “Load unpacked”.</p>
+  </div>
+
+  <div class="card">
+    <h2>What syncs</h2>
+    <div class="grid">
+      <div class="feat"><b>Live tabs</b><span class="muted">Arc-style real-time mirroring of a window across devices — all tabs, or just pinned and grouped ones.</span></div>
+      <div class="feat"><b>Bookmarks</b><span class="muted">Folders, order and edits, merged without duplicates.</span></div>
+      <div class="feat"><b>History</b><span class="muted">New visits appear on your other devices, plus a searchable archive.</span></div>
+      <div class="feat"><b>Open tabs &amp; send tab</b><span class="muted">See other devices' tabs; send a page to any device.</span></div>
+      <div class="feat"><b>Extensions</b><span class="muted">Your extension list and on/off state, with one-click install of missing ones.</span></div>
+      <div class="feat"><b>Reading list</b><span class="muted">Saved for later, everywhere.</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Private by design</h2>
+    <p class="muted" style="margin:0">Everything is encrypted in the browser with a key derived from your password (PBKDF2-SHA256 → HKDF → AES-256-GCM). This server only stores ciphertext and never sees your password or keys. Extension {{.ExtensionID}} · v{{.ExtVersion}} · server {{.Version}}</p>
+  </div>
+</main>
+<script>
+  for (const b of document.querySelectorAll('[data-copy]')) {
+    b.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+      b.textContent = 'Copied';
+      setTimeout(() => (b.textContent = 'Copy'), 1500);
+    });
+  }
+</script>
+</body>
+</html>

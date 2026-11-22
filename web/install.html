@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install Helium Sync</title>
+<style>
+  :root { --bg:#f7f7f8; --card:#fff; --text:#18181b; --muted:#6b6b76; --border:#e4e4e8; --accent:#a21caf; color-scheme: light dark; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111113; --card:#1a1a1d; --text:#ececef; --muted:#9d9da8; --border:#2e2e33; --accent:#e879f9; } }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text); font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .card { max-width: 440px; margin: 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px; text-align:center; }
+  .logo { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,#d946ef,#7c3aed); display:grid; place-items:center; margin:0 auto 16px; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  p { margin: 0 0 18px; color: var(--muted); }
+  a.btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; border-radius:10px; padding:11px 22px; }
+  @media (prefers-color-scheme: dark) { a.btn { color:#1a0620; } }
+  small { display:block; margin-top:18px; color:var(--muted); font-size:12.5px; }
+  small a { color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo"><svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg></div>
+    <h1>Install Helium Sync</h1>
+    <p>Click the button, then choose <b>Add extension</b>. The setup page opens next, already pointing at this server.</p>
+    <a class="btn" href="/ext/helium-sync.crx">Install extension</a>
+    <small>Only a download appeared? The install flag is not on yet: quit Helium and run the tweak again, or enable <code>chrome://flags/#extension-mime-request-handling</code> → “Always prompt for install”. Or <a href="/ext/helium-sync.zip">download it</a> for Developer mode.</small>
+  </div>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helium Sync</title>
+  <link rel="icon" href="../icons/icon-32.png">
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <header class="top">
+      <img src="../icons/icon-48.png" width="36" height="36" alt="">
+      <div class="grow">
+        <h1>Helium Sync</h1>
+        <p class="muted small">Self-hosted, end-to-end encrypted</p>
+      </div>
+      <div id="top-status"></div>
+    </header>
+
+    <!-- Signed out -->
+    <section id="setup" class="card hidden">
+      <div class="stack">
+        <div>
+          <h2 id="setup-title">Connect to your sync server</h2>
+          <p class="muted small" style="margin-top:4px">Your password encrypts your data on this device before it is sent. The server never sees it — and can't recover it if you forget it.</p>
+        </div>
+
+        <div class="tabs" role="tablist">
+          <button type="button" role="tab" data-mode="login" aria-selected="true">Sign in</button>
+          <button type="button" role="tab" data-mode="register" aria-selected="false">Create account</button>
+        </div>
+
+        <form id="auth-form" class="stack" autocomplete="on">
+          <div id="server-fixed" class="server-fixed hidden">
+            <span class="muted small">Server</span>
+            <span id="server-fixed-url" class="ellipsis grow"></span>
+            <button type="button" class="link small" id="server-change">Change</button>
+          </div>
+          <label class="field" id="server-field">
+            <span>Server address</span>
+            <input type="url" id="server" placeholder="https://sync.example.com" required autocomplete="url" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>Username</span>
+            <input type="text" id="username" required autocomplete="username" autocapitalize="off" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input type="password" id="password" required autocomplete="current-password">
+          </label>
+          <label class="field register-only hidden">
+            <span>Confirm password</span>
+            <input type="password" id="password2" autocomplete="new-password">
+          </label>
+          <label class="field register-only hidden" id="invite-field">
+            <span>Invite code</span>
+            <input type="text" id="invite" placeholder="XXXX-XXXX-XXXX" autocapitalize="characters" spellcheck="false">
+          </label>
+          <label class="field">
+            <span>This device's name</span>
+            <input type="text" id="device-name" maxlength="64" placeholder="Helium on my laptop">
+          </label>
+          <div id="auth-warning" class="notice warn hidden"></div>
+          <div id="auth-error" class="notice error hidden" role="alert"></div>
+          <div class="row">
+            <button type="submit" class="primary" id="auth-submit">Sign in</button>
+            <span id="auth-progress" class="muted small hidden"><span class="spinner"></span> <span id="auth-progress-text">Deriving keys…</span></span>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Signed in -->
+    <section id="app" class="hidden stack">
+      <div class="card">
+        <div class="row">
+          <div class="grow">
+            <h2 id="acct-title"></h2>
+            <p class="muted small" id="acct-sub"></p>
+          </div>
+          <button id="sync-now" class="small">Sync now</button>
+        </div>
+        <div id="sync-error" class="notice error hidden" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <h2>What to sync</h2>
+        <div class="list types" id="types" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card" id="live-card">
+        <div class="row">
+          <div class="grow">
+            <h2>Live tabs</h2>
+            <p class="muted small">Tabs mirror across your devices in real time, like Arc. One window per device is synced.</p>
+          </div>
+        </div>
+        <div class="stack" style="margin-top:14px">
+          <div class="segmented" role="radiogroup" aria-label="Which tabs">
+            <label><input type="radio" name="live-mode" value="all"><span><b>All tabs</b><small>Everything in the synced window</small></span></label>
+            <label><input type="radio" name="live-mode" value="arc"><span><b>Pinned &amp; grouped</b><small>Arc-style: today's tabs stay local</small></span></label>
+          </div>
+          <div class="row">
+            <span class="grow">Load tabs from other devices only when opened <span class="muted small" id="live-lazy-note">— saves memory</span></span>
+            <label class="switch"><input type="checkbox" id="live-lazy"><span></span></label>
+          </div>
+          <div class="row">
+            <span class="grow" id="live-window"></span>
+            <button class="small" id="live-use-window">Sync this window</button>
+          </div>
+          <p class="muted small">The mode applies to all your devices.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <h2 class="grow">Devices</h2>
+        </div>
+        <div class="list" id="devices" style="margin-top:12px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Security</h2>
+        <div class="stack" style="margin-top:12px">
+          <details>
+            <summary>Change password</summary>
+            <form id="pw-form" class="stack" style="margin-top:12px">
+              <label class="field"><span>Current password</span><input type="password" id="pw-old" required autocomplete="current-password"></label>
+              <label class="field"><span>New password</span><input type="password" id="pw-new" required minlength="8" autocomplete="new-password"></label>
+              <label class="field"><span>Confirm new password</span><input type="password" id="pw-new2" required autocomplete="new-password"></label>
+              <p class="muted small">Your data stays encrypted with the same key; only its wrapping changes. Other devices are signed out.</p>
+              <div id="pw-msg" class="notice hidden"></div>
+              <div><button class="primary" type="submit">Change password</button></div>
+            </form>
+          </details>
+          <div class="row">
+            <span class="grow">Sign out of this device <span class="muted small">— removes its local sync data, keeps your browser data</span></span>
+            <button id="signout">Sign out</button>
+          </div>
+          <details>
+            <summary class="danger-text">Delete account</summary>
+            <form id="del-form" class="stack" style="margin-top:12px">
+              <p class="small">Deletes all synced data on the server and signs out every device. Browser data on your devices is kept.</p>
+              <label class="field"><span>Password</span><input type="password" id="del-pw" required autocomplete="current-password"></label>
+              <div id="del-msg" class="notice error hidden"></div>
+              <div><button class="danger" type="submit">Delete account and data</button></div>
+            </form>
+          </details>
+        </div>
+      </div>
+
+      <p class="muted small center"><a href="history.html">Search synced history</a> · <span id="version"></span></p>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

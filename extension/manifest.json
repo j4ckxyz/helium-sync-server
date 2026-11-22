@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "Helium Sync",
+  "short_name": "Helium Sync",
+  "version": "0.1.0",
+  "description": "Self-hosted, end-to-end encrypted sync for Helium: bookmarks, history, live tabs, extensions and more.",
+  "minimum_chrome_version": "120",
+  "background": { "service_worker": "src/background.js", "type": "module" },
+  "action": {
+    "default_popup": "ui/popup.html",
+    "default_title": "Helium Sync",
+    "default_icon": { "16": "icons/icon-16.png", "32": "icons/icon-32.png" }
+  },
+  "options_ui": { "page": "ui/options.html", "open_in_tab": true },
+  "icons": { "16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png" },
+  "permissions": [
+    "alarms",
+    "bookmarks",
+    "contextMenus",
+    "favicon",
+    "history",
+    "management",
+    "notifications",
+    "readingList",
+    "storage",
+    "tabGroups",
+    "tabs",
+    "unlimitedStorage",
+    "webNavigation"
+  ]
+}

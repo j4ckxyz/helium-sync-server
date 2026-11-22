@@ -1,0 +1,5 @@
+# Caddy terminates TLS (certificates are automatic) and forwards to Helium Sync.
+# Run helium-sync with: --addr 127.0.0.1:8080 --public-url https://sync.example.com --trust-proxy
+sync.example.com {
+	reverse_proxy 127.0.0.1:8080
+}
