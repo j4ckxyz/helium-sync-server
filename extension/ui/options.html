@@ -11,29 +11,29 @@
 <body>
   <main>
     <header class="top">
-      <img src="../icons/icon-48.png" width="36" height="36" alt="">
+      <svg class="mark" width="36" height="36" viewBox="20 20 88 88" fill="none" stroke="currentColor" stroke-width="10" stroke-linecap="square" aria-hidden="true"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg>
       <div class="grow">
         <h1>Helium Sync</h1>
-        <p class="muted small">Self-hosted, end-to-end encrypted</p>
+        <p class="small">Self-hosted, end-to-end encrypted</p>
       </div>
       <div id="top-status"></div>
     </header>
 
     <!-- Signed out -->
-    <section id="setup" class="card hidden">
-      <div class="stack">
-        <div>
-          <h2 id="setup-title">Connect to your sync server</h2>
-          <p class="muted small" style="margin-top:4px">Your password encrypts your data on this device before it is sent. The server never sees it — and can't recover it if you forget it.</p>
-        </div>
+    <section id="setup" class="setup hidden">
+      <div class="setup-intro">
+        <h2 id="setup-title">Connect to your sync server</h2>
+        <p>Your password encrypts your data on this device before it is sent. The server never sees it — and can't recover it if you forget it.</p>
+      </div>
 
+      <div class="setup-form stack">
         <div class="tabs" role="tablist">
           <button type="button" role="tab" data-mode="login" aria-selected="true">Sign in</button>
           <button type="button" role="tab" data-mode="register" aria-selected="false">Create account</button>
         </div>
 
         <form id="auth-form" class="stack" autocomplete="on">
-          <div id="server-fixed" class="server-fixed hidden">
+          <div id="server-fixed" class="row server-fixed hidden">
             <span class="muted small">Server</span>
             <span id="server-fixed-url" class="ellipsis grow"></span>
             <button type="button" class="link small" id="server-change">Change</button>
@@ -66,92 +66,99 @@
           <div id="auth-error" class="notice error hidden" role="alert"></div>
           <div class="row">
             <button type="submit" class="primary" id="auth-submit">Sign in</button>
-            <span id="auth-progress" class="muted small hidden"><span class="spinner"></span> <span id="auth-progress-text">Deriving keys…</span></span>
+            <span id="auth-progress" class="muted small hidden" role="status"><span class="spinner"></span> <span id="auth-progress-text">Deriving keys…</span></span>
           </div>
         </form>
       </div>
     </section>
 
     <!-- Signed in -->
-    <section id="app" class="hidden stack">
-      <div class="card">
-        <div class="row">
-          <div class="grow">
-            <h2 id="acct-title"></h2>
+    <section id="app" class="app hidden">
+      <nav class="rail" aria-label="Settings sections">
+        <a href="#account" aria-current="true">Account</a>
+        <a href="#sync-types">Sync</a>
+        <a href="#live-card">Live tabs</a>
+        <a href="#devices-section">Devices</a>
+        <a href="#security">Security</a>
+      </nav>
+
+      <div class="sheet">
+        <section class="block" id="account" aria-labelledby="account-h">
+          <div class="block-head">
+            <h2 id="account-h">Account</h2>
+            <button id="sync-now" class="small">Sync now</button>
+          </div>
+          <div>
+            <p class="lead" id="acct-title"></p>
             <p class="muted small" id="acct-sub"></p>
           </div>
-          <button id="sync-now" class="small">Sync now</button>
-        </div>
-        <div id="sync-error" class="notice error hidden" style="margin-top:12px"></div>
-      </div>
+          <div id="sync-error" class="notice error hidden" role="alert"></div>
+        </section>
 
-      <div class="card">
-        <h2>What to sync</h2>
-        <div class="list types" id="types" style="margin-top:12px"></div>
-      </div>
+        <section class="block" id="sync-types" aria-labelledby="sync-h">
+          <h2 id="sync-h">What to sync</h2>
+          <div class="list types" id="types"></div>
+        </section>
 
-      <div class="card" id="live-card">
-        <div class="row">
-          <div class="grow">
-            <h2>Live tabs</h2>
-            <p class="muted small">Tabs mirror across your devices in real time, like Arc. One window per device is synced.</p>
+        <section class="block" id="live-card" aria-labelledby="live-h">
+          <div>
+            <h2 id="live-h">Live tabs</h2>
+            <p class="muted">Tabs mirror across your devices in real time, like Arc. One window per device is synced.</p>
           </div>
-        </div>
-        <div class="stack" style="margin-top:14px">
           <div class="segmented" role="radiogroup" aria-label="Which tabs">
             <label><input type="radio" name="live-mode" value="all"><span><b>All tabs</b><small>Everything in the synced window</small></span></label>
             <label><input type="radio" name="live-mode" value="arc"><span><b>Pinned &amp; grouped</b><small>Arc-style: today's tabs stay local</small></span></label>
           </div>
-          <div class="row">
-            <span class="grow">Load tabs from other devices only when opened <span class="muted small" id="live-lazy-note">— saves memory</span></span>
-            <label class="switch"><input type="checkbox" id="live-lazy"><span></span></label>
-          </div>
-          <div class="row">
-            <span class="grow" id="live-window"></span>
-            <button class="small" id="live-use-window">Sync this window</button>
+          <div class="rows">
+            <div class="row">
+              <span class="grow">Load tabs from other devices only when opened <span class="muted small" id="live-lazy-note">— saves memory</span></span>
+              <label class="switch"><input type="checkbox" id="live-lazy" aria-label="Load tabs from other devices only when opened"><span></span></label>
+            </div>
+            <div class="row wrap-narrow">
+              <span class="grow" id="live-window"></span>
+              <button class="small" id="live-use-window">Sync this window</button>
+            </div>
           </div>
           <p class="muted small">The mode applies to all your devices.</p>
-        </div>
-      </div>
+        </section>
 
-      <div class="card">
-        <div class="row">
-          <h2 class="grow">Devices</h2>
-        </div>
-        <div class="list" id="devices" style="margin-top:12px"></div>
-      </div>
+        <section class="block" id="devices-section" aria-labelledby="devices-h">
+          <h2 id="devices-h">Devices</h2>
+          <div class="list" id="devices"></div>
+        </section>
 
-      <div class="card">
-        <h2>Security</h2>
-        <div class="stack" style="margin-top:12px">
-          <details>
-            <summary>Change password</summary>
-            <form id="pw-form" class="stack" style="margin-top:12px">
-              <label class="field"><span>Current password</span><input type="password" id="pw-old" required autocomplete="current-password"></label>
-              <label class="field"><span>New password</span><input type="password" id="pw-new" required minlength="8" autocomplete="new-password"></label>
-              <label class="field"><span>Confirm new password</span><input type="password" id="pw-new2" required autocomplete="new-password"></label>
-              <p class="muted small">Your data stays encrypted with the same key; only its wrapping changes. Other devices are signed out.</p>
-              <div id="pw-msg" class="notice hidden"></div>
-              <div><button class="primary" type="submit">Change password</button></div>
-            </form>
-          </details>
-          <div class="row">
-            <span class="grow">Sign out of this device <span class="muted small">— removes its local sync data, keeps your browser data</span></span>
-            <button id="signout">Sign out</button>
+        <section class="block" id="security" aria-labelledby="security-h">
+          <h2 id="security-h">Security</h2>
+          <div class="rows">
+            <details>
+              <summary>Change password</summary>
+              <form id="pw-form" class="stack">
+                <label class="field"><span>Current password</span><input type="password" id="pw-old" required autocomplete="current-password"></label>
+                <label class="field"><span>New password</span><input type="password" id="pw-new" required minlength="8" autocomplete="new-password"></label>
+                <label class="field"><span>Confirm new password</span><input type="password" id="pw-new2" required autocomplete="new-password"></label>
+                <p class="muted small">Your data stays encrypted with the same key; only its wrapping changes. Other devices are signed out.</p>
+                <div id="pw-msg" class="notice hidden" role="status"></div>
+                <div><button class="primary" type="submit">Change password</button></div>
+              </form>
+            </details>
+            <div class="row wrap-narrow">
+              <span class="grow">Sign out of this device <span class="muted small">— removes its local sync data, keeps your browser data</span></span>
+              <button id="signout" class="small">Sign out</button>
+            </div>
+            <details>
+              <summary class="danger-text">Delete account</summary>
+              <form id="del-form" class="stack">
+                <p class="small">Deletes all synced data on the server and signs out every device. Browser data on your devices is kept.</p>
+                <label class="field"><span>Password</span><input type="password" id="del-pw" required autocomplete="current-password"></label>
+                <div id="del-msg" class="notice error hidden" role="alert"></div>
+                <div><button class="danger" type="submit">Delete account and data</button></div>
+              </form>
+            </details>
           </div>
-          <details>
-            <summary class="danger-text">Delete account</summary>
-            <form id="del-form" class="stack" style="margin-top:12px">
-              <p class="small">Deletes all synced data on the server and signs out every device. Browser data on your devices is kept.</p>
-              <label class="field"><span>Password</span><input type="password" id="del-pw" required autocomplete="current-password"></label>
-              <div id="del-msg" class="notice error hidden"></div>
-              <div><button class="danger" type="submit">Delete account and data</button></div>
-            </form>
-          </details>
-        </div>
-      </div>
+        </section>
 
-      <p class="muted small center"><a href="history.html">Search synced history</a> · <span id="version"></span></p>
+        <p class="foot"><a href="history.html">Search synced history</a> <span id="version"></span></p>
+      </div>
     </section>
   </main>
   <script type="module" src="options.js"></script>

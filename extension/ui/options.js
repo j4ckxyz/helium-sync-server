@@ -289,5 +289,28 @@ chrome.runtime.onMessage.addListener((m) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Index rail: mark the section being read.
+
+const railLinks = [...document.querySelectorAll('.rail a')];
+
+function markSection() {
+  const shown = railLinks.map((a) => $(a.getAttribute('href'))).filter((s) => s.getClientRects().length);
+  if (!shown.length) return;
+  let active = shown.filter((s) => s.getBoundingClientRect().top <= 120).pop() || shown[0];
+  // The last sections cannot scroll up to the top of a tall window.
+  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 2) {
+    const picked = shown.find((s) => `#${s.id}` === location.hash);
+    if (picked && picked.getBoundingClientRect().top >= 0) active = picked;
+    else if (scrollY > 0) active = shown[shown.length - 1];
+  }
+  for (const a of railLinks) {
+    if (a.getAttribute('href') === `#${active.id}`) a.setAttribute('aria-current', 'true');
+    else a.removeAttribute('aria-current');
+  }
+}
+
+for (const type of ['scroll', 'hashchange', 'resize']) addEventListener(type, markSection, { passive: true });
+
 setMode('login');
 render();
