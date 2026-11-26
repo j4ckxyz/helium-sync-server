@@ -20,7 +20,7 @@ async function search() {
     const label = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
     if (label !== day) {
       day = label;
-      out.push(h('div', { class: 'day' }, label));
+      out.push(h('h2', { class: 'day' }, label));
     }
     out.push(
       h(

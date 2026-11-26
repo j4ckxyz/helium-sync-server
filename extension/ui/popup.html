@@ -8,23 +8,23 @@
 </head>
 <body>
   <header>
-    <img src="../icons/icon-32.png" width="22" height="22" alt="">
+    <svg class="mark" width="20" height="20" viewBox="20 20 88 88" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="square" aria-hidden="true"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg>
     <strong class="grow">Helium Sync</strong>
     <span id="state"></span>
   </header>
 
   <div id="signed-out" class="pad hidden">
     <p>Sync bookmarks, history and live tabs between your Helium browsers, through your own server.</p>
-    <button class="primary" id="setup" style="margin-top:12px;width:100%">Set up sync</button>
+    <button class="primary" id="setup">Set up sync</button>
   </div>
 
   <div id="main" class="hidden">
-    <div id="alert" class="notice hidden" style="margin:12px 14px 0"></div>
+    <div id="alert" class="notice hidden"></div>
 
     <section class="pad live" id="live">
       <div class="row">
         <div class="grow">
-          <div class="label">Live tabs</div>
+          <h2>Live tabs</h2>
           <div class="muted small" id="live-desc"></div>
         </div>
         <button class="small" id="live-here">Sync this window</button>
@@ -32,17 +32,17 @@
     </section>
 
     <section id="send" class="pad hidden">
-      <div class="label">Send this tab to</div>
+      <h2>Send this tab to</h2>
       <div class="chips" id="send-targets"></div>
     </section>
 
     <section id="ext" class="pad hidden">
-      <div class="label">Extensions from your other devices</div>
+      <h2>Extensions from your other devices</h2>
       <div id="ext-list" class="mini-list"></div>
     </section>
 
     <section id="devices" class="hidden">
-      <div class="pad-x label" style="padding-top:12px">Tabs on your other devices</div>
+      <h2>Tabs on your other devices</h2>
       <div id="device-list"></div>
     </section>
   </div>

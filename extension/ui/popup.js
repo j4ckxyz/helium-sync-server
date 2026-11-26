@@ -141,7 +141,7 @@ async function renderDevices() {
             },
             h('img', { class: 'fav', src: favicon(t.u), alt: '' }),
             h('span', { class: 'grow ellipsis' }, t.t || host(t.u)),
-            t.p ? h('span', { class: 'pin' }, 'PINNED') : null,
+            t.p ? h('span', { class: 'pin' }, 'Pinned') : null,
           ),
         ),
       );
