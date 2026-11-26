@@ -4,75 +4,144 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Helium Sync</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='8' fill='%23141414'/%3E%3Cg fill='none' stroke='%23f2f1ec' stroke-width='12' stroke-linecap='square'%3E%3Cpath d='M36 54a30 30 0 0 1 51-15l7 7'/%3E%3Cpath d='M94 30v16H78'/%3E%3Cpath d='M92 74a30 30 0 0 1-51 15l-7-7'/%3E%3Cpath d='M34 98V82h16'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  :root { --bg:#f7f7f8; --card:#fff; --text:#18181b; --muted:#6b6b76; --border:#e4e4e8; --accent:#a21caf; --code:#f1f1f3; color-scheme: light dark; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#111113; --card:#1a1a1d; --text:#ececef; --muted:#9d9da8; --border:#2e2e33; --accent:#e879f9; --code:#232327; } }
+  :root {
+    --paper: #f2f1ec; --ink: #141414; --muted: #5e5e58; --rule: #c9c7be; --accent: #c8322a;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #121212; --ink: #edede8; --muted: #8a8a82; --rule: #2a2a26; --accent: #ff5a4e; }
+  }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--text); font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 720px; margin: 0 auto; padding: 48px 20px 64px; }
-  header { display:flex; align-items:center; gap:14px; margin-bottom: 28px; }
-  .logo { width:44px; height:44px; border-radius:11px; background:linear-gradient(135deg,#d946ef,#7c3aed); display:grid; place-items:center; flex:none; }
-  h1 { font-size: 26px; margin:0; letter-spacing:-0.02em; }
-  h2 { font-size: 16px; margin: 0 0 10px; }
-  .muted { color: var(--muted); }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:22px; margin-top:16px; }
-  ol { margin: 8px 0 0; padding-left: 22px; }
-  li + li { margin-top: 10px; }
-  .cmd { display:flex; align-items:stretch; gap:8px; margin-top:8px; }
-  code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  .cmd code { flex:1; background:var(--code); border-radius:8px; padding:9px 12px; overflow-x:auto; white-space:nowrap; }
-  button { font:inherit; font-size:13px; border:1px solid var(--border); background:var(--card); color:var(--text); border-radius:8px; padding:0 12px; cursor:pointer; }
-  button:hover { border-color: var(--accent); }
-  .os { font-weight:600; font-size:13px; margin-top: 14px; }
-  a { color: var(--accent); }
-  .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
-  .feat { font-size: 14px; }
-  .feat b { display:block; }
+  html { background: var(--paper); scrollbar-color: var(--rule) var(--paper); }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent); color: var(--paper); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1, h2 { margin: 0; font-weight: 800; text-wrap: balance; }
+  h2 { font-size: 1.5rem; line-height: 1.15; letter-spacing: -0.02em; }
+  p { margin: 0; text-wrap: pretty; }
+  a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+  a:hover { color: var(--accent); }
+  code { font-family: var(--mono); font-size: 0.875em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+  .page { max-width: 1168px; margin: 0 auto; padding: 0 24px 64px; }
+  .twelve { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; }
+
+  .mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 24px; padding: 20px 0 16px; border-bottom: 2px solid var(--ink); }
+  .wordmark { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+  .wordmark svg { display: block; }
+  .status { font-size: 0.875rem; color: var(--muted); }
+  .status::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 8px; background: var(--ink); }
+  .status code { color: var(--ink); }
+
+  .connect { grid-column: 1 / 8; padding: 40px 0 48px; }
+  .syncs { grid-column: 8 / 13; padding: 40px 0 48px 24px; border-left: 1px solid var(--rule); }
+  .connect, .syncs { display: grid; grid-row: span 2; grid-template-rows: subgrid; align-content: start; min-width: 0; }
+  .connect > h1, .syncs > h2 { align-self: end; margin-bottom: 32px; }
+  h1 { font-size: clamp(2.5rem, 5.8vw, 4.5rem); line-height: 1; letter-spacing: -0.035em; }
+
+  .steps { list-style: none; margin: 0; padding: 0; counter-reset: step; border-top: 2px solid var(--ink); }
+  .steps > li { counter-increment: step; display: grid; grid-template-columns: 48px minmax(0, 1fr); padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .steps > li::before { content: counter(step); font-size: 2rem; font-weight: 800; line-height: 0.9; color: var(--accent); padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .os { margin: 14px 0 6px; font-size: 0.875rem; font-weight: 700; }
+  .cmd { display: grid; grid-template-columns: minmax(0, 1fr) auto; border: 1px solid var(--ink); border-radius: 2px; }
+  .cmd code { padding: 10px 12px; font-size: 0.8125rem; line-height: 1.6; white-space: pre-wrap; }
+  button { font: 700 0.875rem/1 var(--sans); min-width: 96px; min-height: 44px; padding: 0 16px; color: var(--paper); background: var(--ink); border: 0; border-radius: 0; cursor: pointer; transition: background-color .15s; }
+  button:hover { background: var(--accent); }
+  .note { margin-top: 20px; padding-left: 48px; font-size: 0.875rem; color: var(--muted); max-width: 68ch; }
+
+  .index { margin: 0; align-self: start; border-top: 2px solid var(--ink); }
+  .index > div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); column-gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--rule); }
+  .index dt { font-weight: 700; }
+  .index dd { margin: 0; color: var(--muted); text-wrap: pretty; }
+
+  .private { border-top: 2px solid var(--ink); padding-top: 24px; row-gap: 16px; }
+  .private h2 { grid-column: 1 / 5; }
+  .private > div { grid-column: 5 / 13; min-width: 0; }
+  .private p { max-width: 68ch; }
+  .colophon { display: flex; flex-wrap: wrap; gap: 12px 40px; margin: 24px 0 0; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 0.8125rem; }
+  .colophon div { min-width: 0; }
+  .colophon dt { color: var(--muted); }
+  .colophon dd { margin: 0; font-family: var(--mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+
+  @media (max-width: 920px) {
+    .twelve, .connect, .syncs { display: block; }
+    .syncs { padding-left: 0; padding-top: 0; border-left: 0; }
+    .syncs > h2 { margin-bottom: 20px; }
+    .private h2 { margin-bottom: 12px; }
+  }
+  @media (max-width: 560px) {
+    .page { padding: 0 16px 48px; }
+    .connect { padding: 32px 0 40px; }
+    .sep { display: none; }
+    .status code { display: block; }
+    .steps > li { grid-template-columns: 32px minmax(0, 1fr); }
+    .steps > li::before { font-size: 1.5rem; }
+    .cmd { grid-template-columns: minmax(0, 1fr); }
+    .note { padding-left: 0; }
+    .index > div { grid-template-columns: minmax(0, 1fr); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <div class="logo"><svg width="26" height="26" viewBox="0 0 128 128" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg></div>
-    <div>
-      <h1>Helium Sync</h1>
-      <div class="muted">Your self-hosted, end-to-end encrypted sync server · <code>{{.URL}}</code></div>
-    </div>
+<div class="page">
+  <header class="mast">
+    <p class="wordmark"><svg width="28" height="28" viewBox="20 20 88 88" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="square" aria-hidden="true"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg>Helium Sync</p>
+    <p class="status">Your self-hosted, end-to-end encrypted sync server<span class="sep"> · </span><code>{{.URL}}</code></p>
   </header>
 
-  <div class="card">
-    <h2>Connect a Helium browser</h2>
-    <ol>
-      <li><b>Quit Helium</b>, then run the tweak for your system:
-        <div class="os">macOS / Linux — Terminal</div>
-        <div class="cmd"><code id="c1">{{.TweakSh}}</code><button data-copy="c1">Copy</button></div>
-        <div class="os">Windows — PowerShell</div>
-        <div class="cmd"><code id="c2">{{.TweakPs1}}</code><button data-copy="c2">Copy</button></div>
-      </li>
-      <li>Helium opens. Click <b>Add extension</b>.</li>
-      <li>Sign in, or create your account{{if eq .Registration "invite"}} with an invite code (the server prints one at first start; make more with <code>helium-sync invite</code>){{end}}.</li>
-    </ol>
-    <p class="muted" style="margin-top:14px;font-size:13px">The tweak only switches on Helium's built-in “Always prompt for install” flag so Helium accepts the extension from this server, then opens the install page. The scripts live in the <a href="https://github.com/j4ckxyz/helium-sync-server/tree/main/scripts">project repository</a>; read them before running. Undo with <code>--undo</code>. Prefer Developer mode? <a href="/ext/helium-sync.zip">Download the extension</a> and use “Load unpacked”.</p>
-  </div>
+  <main>
+    <div class="twelve">
+      <section class="connect" aria-labelledby="connect-h">
+        <h1 id="connect-h">Connect a browser</h1>
+        <div>
+          <ol class="steps">
+            <li>
+              <div>
+                <p><b>Quit Helium</b>, then run the tweak for your system:</p>
+                <p class="os" id="os1">macOS or Linux, in Terminal</p>
+                <div class="cmd"><code id="c1">{{.TweakSh}}</code><button type="button" data-copy="c1" aria-describedby="os1">Copy</button></div>
+                <p class="os" id="os2">Windows, in PowerShell</p>
+                <div class="cmd"><code id="c2">{{.TweakPs1}}</code><button type="button" data-copy="c2" aria-describedby="os2">Copy</button></div>
+              </div>
+            </li>
+            <li><p>Helium opens. Click <b>Add extension</b>.</p></li>
+            <li><p>Sign in, or create your account{{if eq .Registration "invite"}} with an invite code (the server prints one at first start; make more with <code>helium-sync invite</code>){{end}}.</p></li>
+          </ol>
+          <p class="note">The tweak only switches on Helium's built-in “Always prompt for install” flag so Helium accepts the extension from this server, then opens the install page. The scripts live in the <a href="https://github.com/j4ckxyz/helium-sync-server/tree/main/scripts">project repository</a>; read them before running. Undo with <code>--undo</code>. Prefer Developer mode? <a href="/ext/helium-sync.zip">Download the extension</a> and use “Load unpacked”.</p>
+        </div>
+      </section>
 
-  <div class="card">
-    <h2>What syncs</h2>
-    <div class="grid">
-      <div class="feat"><b>Live tabs</b><span class="muted">Arc-style real-time mirroring of a window across devices — all tabs, or just pinned and grouped ones.</span></div>
-      <div class="feat"><b>Bookmarks</b><span class="muted">Folders, order and edits, merged without duplicates.</span></div>
-      <div class="feat"><b>History</b><span class="muted">New visits appear on your other devices, plus a searchable archive.</span></div>
-      <div class="feat"><b>Open tabs &amp; send tab</b><span class="muted">See other devices' tabs; send a page to any device.</span></div>
-      <div class="feat"><b>Extensions</b><span class="muted">Your extension list and on/off state, with one-click install of missing ones.</span></div>
-      <div class="feat"><b>Reading list</b><span class="muted">Saved for later, everywhere.</span></div>
+      <section class="syncs" aria-labelledby="syncs-h">
+        <h2 id="syncs-h">What syncs</h2>
+        <dl class="index">
+          <div><dt>Live tabs</dt><dd>Arc-style real-time mirroring of a window across devices — all tabs, or just pinned and grouped ones.</dd></div>
+          <div><dt>Bookmarks</dt><dd>Folders, order and edits, merged without duplicates.</dd></div>
+          <div><dt>History</dt><dd>New visits appear on your other devices, plus a searchable archive.</dd></div>
+          <div><dt>Open tabs &amp; send tab</dt><dd>See other devices' tabs; send a page to any device.</dd></div>
+          <div><dt>Extensions</dt><dd>Your extension list and on/off state, with one-click install of missing ones.</dd></div>
+          <div><dt>Reading list</dt><dd>Saved for later, everywhere.</dd></div>
+        </dl>
+      </section>
     </div>
-  </div>
 
-  <div class="card">
-    <h2>Private by design</h2>
-    <p class="muted" style="margin:0">Everything is encrypted in the browser with a key derived from your password (PBKDF2-SHA256 → HKDF → AES-256-GCM). This server only stores ciphertext and never sees your password or keys. Extension {{.ExtensionID}} · v{{.ExtVersion}} · server {{.Version}}</p>
-  </div>
-</main>
+    <section class="twelve private" aria-labelledby="private-h">
+      <h2 id="private-h">Private by design</h2>
+      <div>
+        <p>Everything is encrypted in the browser with a key derived from your password (PBKDF2-SHA256 → HKDF → AES-256-GCM). This server only stores ciphertext and never sees your password or keys.</p>
+        <dl class="colophon">
+          <div><dt>Extension ID</dt><dd>{{.ExtensionID}}</dd></div>
+          <div><dt>Extension version</dt><dd>v{{.ExtVersion}}</dd></div>
+          <div><dt>Server version</dt><dd>{{.Version}}</dd></div>
+        </dl>
+      </div>
+    </section>
+  </main>
+</div>
 <script>
   for (const b of document.querySelectorAll('[data-copy]')) {
     b.addEventListener('click', async () => {

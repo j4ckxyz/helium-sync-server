@@ -4,27 +4,72 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Install Helium Sync</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='8' fill='%23141414'/%3E%3Cg fill='none' stroke='%23f2f1ec' stroke-width='12' stroke-linecap='square'%3E%3Cpath d='M36 54a30 30 0 0 1 51-15l7 7'/%3E%3Cpath d='M94 30v16H78'/%3E%3Cpath d='M92 74a30 30 0 0 1-51 15l-7-7'/%3E%3Cpath d='M34 98V82h16'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  :root { --bg:#f7f7f8; --card:#fff; --text:#18181b; --muted:#6b6b76; --border:#e4e4e8; --accent:#a21caf; color-scheme: light dark; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#111113; --card:#1a1a1d; --text:#ececef; --muted:#9d9da8; --border:#2e2e33; --accent:#e879f9; } }
-  body { margin:0; min-height:100vh; display:grid; place-items:center; background:var(--bg); color:var(--text); font:15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  .card { max-width: 440px; margin: 20px; background:var(--card); border:1px solid var(--border); border-radius:16px; padding:32px; text-align:center; }
-  .logo { width:56px; height:56px; border-radius:14px; background:linear-gradient(135deg,#d946ef,#7c3aed); display:grid; place-items:center; margin:0 auto 16px; }
-  h1 { font-size:22px; margin:0 0 6px; }
-  p { margin: 0 0 18px; color: var(--muted); }
-  a.btn { display:inline-block; background:var(--accent); color:#fff; text-decoration:none; font-weight:600; border-radius:10px; padding:11px 22px; }
-  @media (prefers-color-scheme: dark) { a.btn { color:#1a0620; } }
-  small { display:block; margin-top:18px; color:var(--muted); font-size:12.5px; }
-  small a { color: var(--accent); }
+  :root {
+    --paper: #f2f1ec; --ink: #141414; --muted: #5e5e58; --rule: #c9c7be; --accent: #c8322a;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #121212; --ink: #edede8; --muted: #8a8a82; --rule: #2a2a26; --accent: #ff5a4e; }
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--paper); scrollbar-color: var(--rule) var(--paper); }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.5 var(--sans); -webkit-font-smoothing: antialiased; }
+  ::selection { background: var(--accent); color: var(--paper); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  h1, h2 { margin: 0; font-weight: 800; text-wrap: balance; }
+  h1 { font-size: clamp(3rem, 10vw, 6rem); line-height: 0.98; letter-spacing: -0.035em; padding: 48px 0 40px; }
+  h2 { font-size: 1rem; }
+  p { margin: 0; text-wrap: pretty; }
+  a { color: var(--ink); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+  a:hover { color: var(--accent); }
+  code { font-family: var(--mono); font-size: 0.875em; overflow-wrap: anywhere; }
+
+  .page { max-width: 1168px; margin: 0 auto; padding: 0 24px 64px; }
+  .mast { padding: 20px 0 16px; border-bottom: 2px solid var(--ink); }
+  .wordmark { display: flex; align-items: center; gap: 10px; font-size: 1.25rem; font-weight: 800; letter-spacing: -0.02em; }
+  .wordmark svg { display: block; }
+  .sheet { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 24px; align-items: start; border-top: 2px solid var(--ink); padding-top: 24px; }
+  .act { grid-column: 1 / 7; }
+  .act p { font-size: 1.25rem; line-height: 1.45; max-width: 32ch; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 64px; min-width: 280px; margin-top: 32px; padding: 0 32px; font-size: 1.25rem; font-weight: 800; color: var(--paper); background: var(--ink); border-radius: 2px; text-decoration: none; transition: background-color .15s; }
+  .btn:hover { color: var(--paper); background: var(--accent); }
+  .fallback { grid-column: 8 / 13; min-width: 0; padding-left: 24px; border-left: 1px solid var(--rule); font-size: 0.875rem; color: var(--muted); }
+  .fallback h2 { color: var(--ink); margin-bottom: 8px; }
+  .fallback code { color: var(--ink); }
+
+  @media (max-width: 760px) {
+    .page { padding: 0 16px 48px; }
+    h1 { padding: 32px 0 24px; }
+    .sheet { display: block; }
+    .btn { display: flex; min-width: 0; }
+    .fallback { margin-top: 40px; padding: 16px 0 0; border-left: 0; border-top: 1px solid var(--rule); }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo"><svg width="32" height="32" viewBox="0 0 128 128" fill="none" stroke="#fff" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg></div>
+<div class="page">
+  <header class="mast">
+    <p class="wordmark"><svg width="28" height="28" viewBox="20 20 88 88" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="square" aria-hidden="true"><path d="M36 54a30 30 0 0 1 51-15l7 7"/><path d="M94 30v16H78"/><path d="M92 74a30 30 0 0 1-51 15l-7-7"/><path d="M34 98V82h16"/></svg>Helium Sync</p>
+  </header>
+
+  <main>
     <h1>Install Helium Sync</h1>
-    <p>Click the button, then choose <b>Add extension</b>. The setup page opens next, already pointing at this server.</p>
-    <a class="btn" href="/ext/helium-sync.crx">Install extension</a>
-    <small>Only a download appeared? The install flag is not on yet: quit Helium and run the tweak again (<code>{{.TweakSh}}</code>), or enable <code>chrome://flags/#extension-mime-request-handling</code> → “Always prompt for install”. Or <a href="/ext/helium-sync.zip">download it</a> for Developer mode.</small>
-  </div>
+    <div class="sheet">
+      <div class="act">
+        <p>Click the button, then choose <b>Add extension</b>. The setup page opens next, already pointing at this server.</p>
+        <a class="btn" href="/ext/helium-sync.crx">Install extension</a>
+      </div>
+      <aside class="fallback">
+        <h2>Only a download appeared?</h2>
+        <p>The install flag is not on yet: quit Helium and run the tweak again (<code>{{.TweakSh}}</code>), or enable <code>chrome://flags/#extension-mime-request-handling</code> → “Always prompt for install”. Or <a href="/ext/helium-sync.zip">download it</a> for Developer mode.</p>
+      </aside>
+    </div>
+  </main>
+</div>
 </body>
 </html>
